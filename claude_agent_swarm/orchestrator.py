@@ -548,6 +548,7 @@ class SwarmOrchestrator:
         )
         
         return {
+            "success": True,
             "pattern": "leader",
             "leader_result": result,
             "token_usage": result.get("usage", {}),
@@ -583,6 +584,7 @@ class SwarmOrchestrator:
             total_usage.output_tokens += usage.get("output_tokens", 0)
         
         return {
+            "success": True,
             "pattern": "pipeline",
             "stages": results,
             "final_output": pipeline_data,
@@ -637,6 +639,7 @@ class SwarmOrchestrator:
                 total_usage.output_tokens += usage.get("output_tokens", 0)
         
         return {
+            "success": True,
             "pattern": "council",
             "analyses": analyses,
             "token_usage": {
@@ -678,6 +681,7 @@ class SwarmOrchestrator:
                 total_usage.output_tokens += usage.get("output_tokens", 0)
         
         return {
+            "success": True,
             "pattern": "swarm",
             "results": results,
             "token_usage": {

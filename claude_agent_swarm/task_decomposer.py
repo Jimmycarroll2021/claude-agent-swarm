@@ -27,52 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ComplexityScore:
-    """Complexity score for a task."""
-    
-    overall: float  # 0.0 to 1.0
-    cognitive: float  # Cognitive complexity
-    domain: float  # Domain knowledge required
-    steps: float  # Number of steps required
-    dependencies: float  # Dependency complexity
-    data_volume: float  # Amount of data to process
-    
-    @property
-    def is_complex(self) -> bool:
-        """Determine if task is complex enough to benefit from swarm."""
-        return self.overall > 0.6
-    
-    @property
-    def recommended_agents(self) -> int:
-        """Recommend number of agents based on complexity."""
-        if self.overall < 0.3:
-            return 1
-        elif self.overall < 0.5:
-            return 2
-        elif self.overall < 0.7:
-            return 3
-        elif self.overall < 0.85:
-            return 5
-        else:
-            return min(10, int(self.overall * 10))
-
-
-@dataclass
-class Subtask:
-    """Represents a decomposed subtask."""
-    
-    subtask_id: str
-    description: str
-    estimated_complexity: ComplexityScore
-    dependencies: list[str] = field(default_factory=list)
-    estimated_tokens: int = 0
-    estimated_time: float = 0.0
-    required_specialization: str | None = None
-    priority: int = 0
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
 class DependencyGraph:
     """Represents task dependencies."""
     
@@ -149,17 +103,6 @@ class DependencyGraph:
             current = max(deps, key=lambda d: lengths.get(d, 0))
         
         return list(reversed(critical_path))
-
-
-@dataclass
-class LoadBalancePlan:
-    """Plan for distributing tasks across agents."""
-    
-    batches: list[list[str]]  # Task IDs grouped for parallel execution
-    agent_assignments: dict[str, str]  # task_id -> agent_id
-    estimated_total_time: float
-    estimated_total_tokens: int
-    parallelization_factor: float  # Ratio of parallel to sequential work
 
 
 class TaskDecomposer:
@@ -641,7 +584,24 @@ Guidelines:
                 f"Task decomposition failed: {e}",
                 error_code="DECOMPOSITION_ERROR"
             ) from e
-    
+
+    async def decompose(
+        self,
+        task: str,
+        context: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Decompose a task into subtasks. Alias for decompose_task().
+
+        Args:
+            task: The task description
+            context: Additional context
+
+        Returns:
+            List of subtask dictionaries
+        """
+        return await self.decompose_task(task, context=context)
+
     def _extract_subtasks_fallback(
         self,
         content: str,

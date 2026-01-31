@@ -14,9 +14,24 @@ import structlog
 
 from claude_agent_swarm.patterns.base import Pattern, PatternConfig, PatternStatus
 from claude_agent_swarm.agent import Agent
-from claude_agent_swarm.task_decomposer import TaskDecomposer, Task
+from claude_agent_swarm.task_decomposer import TaskDecomposer
 
 logger = structlog.get_logger()
+
+
+@dataclass
+class SubtaskItem:
+    """Represents a subtask in leader pattern."""
+    id: str
+    description: str
+
+
+@dataclass
+class DecomposedTask:
+    """Result of task decomposition for leader pattern."""
+    id: str
+    description: str
+    subtasks: List[SubtaskItem]
 
 
 @dataclass
@@ -66,14 +81,19 @@ class LeaderPattern(Pattern):
             a for i, a in enumerate(agents)
             if i != self.leader_config.leader_agent_index
         ]
-        self._task_decomposer = TaskDecomposer()
+        self._task_decomposer: Optional[TaskDecomposer] = None
         
         logger.info(
             "leader_pattern_initialized",
             leader=self._leader.name,
             follower_count=len(self._followers),
         )
-    
+
+    async def initialize(self) -> None:
+        """Initialize the pattern including task decomposer."""
+        await super().initialize()
+        self._task_decomposer = await TaskDecomposer.create()
+
     async def execute(
         self,
         task: str,
@@ -103,9 +123,10 @@ class LeaderPattern(Pattern):
                 if self.leader_config.enable_decomposition:
                     decomposed_task = await self._decompose_task(task, context)
                 else:
-                    decomposed_task = Task(
+                    decomposed_task = DecomposedTask(
                         id=f"task_{self._execution_count}",
                         description=task,
+                        subtasks=[],
                     )
                 
                 # Step 2: Assign subtasks to followers
@@ -153,28 +174,47 @@ class LeaderPattern(Pattern):
         self,
         task: str,
         context: Optional[Dict[str, Any]],
-    ) -> Task:
+    ) -> DecomposedTask:
         """Decompose task using leader.
-        
+
         Args:
             task: Task to decompose
             context: Optional context
-            
+
         Returns:
             Decomposed task
         """
-        # Use task decomposer
-        decomposed = await self._task_decomposer.decompose(
+        # Initialize task decomposer if not already done
+        if self._task_decomposer is None:
+            self._task_decomposer = await TaskDecomposer.create()
+
+        # Use task decomposer - returns list[dict]
+        subtasks_data = await self._task_decomposer.decompose(
             task,
             context=context,
         )
-        
+
+        # Convert to SubtaskItem objects
+        subtasks = [
+            SubtaskItem(
+                id=st.get("subtask_id", f"subtask_{i}"),
+                description=st.get("description", ""),
+            )
+            for i, st in enumerate(subtasks_data)
+        ]
+
+        decomposed = DecomposedTask(
+            id=f"task_{self._execution_count}",
+            description=task,
+            subtasks=subtasks,
+        )
+
         logger.debug(
             "task_decomposed",
             task_id=decomposed.id,
             subtask_count=len(decomposed.subtasks),
         )
-        
+
         return decomposed
     
     async def _assign_subtasks(

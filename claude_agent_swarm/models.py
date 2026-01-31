@@ -179,3 +179,18 @@ class LoadBalancePlan:
     estimated_total_time: float
     estimated_total_tokens: int
     parallelization_factor: float  # Ratio of parallel to sequential work
+
+
+@dataclass
+class Task:
+    """Represents a task to be executed by agents."""
+
+    task_id: str
+    description: str
+    status: str = "pending"  # pending, in_progress, completed, failed
+    priority: int = 0
+    dependencies: list[str] = field(default_factory=list)
+    assigned_agent: str | None = None
+    result: Any = None
+    error: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)

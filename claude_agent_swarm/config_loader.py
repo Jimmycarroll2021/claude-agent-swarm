@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Union, Set
 from enum import Enum
 
 import yaml
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class LogLevel(str, Enum):
@@ -53,12 +53,12 @@ class RetryConfig(BaseModel):
     max_delay: float = Field(default=60.0, ge=0)
     exponential_base: float = Field(default=2.0, ge=1.0)
     
-    @validator("max_delay")
-    def max_delay_greater_than_base(cls, v, values):
+    @model_validator(mode="after")
+    def max_delay_greater_than_base(self):
         """Ensure max_delay is greater than base_delay."""
-        if "base_delay" in values and v < values["base_delay"]:
+        if self.max_delay < self.base_delay:
             raise ValueError("max_delay must be greater than base_delay")
-        return v
+        return self
 
 
 class RateLimitConfig(BaseModel):
@@ -87,8 +87,9 @@ class LLMConfig(BaseModel):
     timeout: float = Field(default=60.0, ge=1)
     retry: RetryConfig = Field(default_factory=RetryConfig)
     
-    @validator("temperature")
-    def valid_temperature(cls, v):
+    @field_validator("temperature")
+    @classmethod
+    def valid_temperature(cls, v: float) -> float:
         """Validate temperature is reasonable."""
         if v > 1.5:
             return 1.5
@@ -166,29 +167,28 @@ class WorkflowConfig(BaseModel):
     steps: List[WorkflowStep] = Field(default_factory=list)
     max_parallel: int = Field(default=5, ge=1)
     timeout: Optional[float] = None
-    on_failure: str = Field(default="stop", regex="^(stop|continue|retry)$")
+    on_failure: str = Field(default="stop", pattern="^(stop|continue|retry)$")
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
-    @root_validator
-    def validate_step_dependencies(cls, values):
+    @model_validator(mode="after")
+    def validate_step_dependencies(self):
         """Validate that step dependencies exist."""
-        steps = values.get("steps", [])
-        step_names = {step.name for step in steps}
-        
-        for step in steps:
+        step_names = {step.name for step in self.steps}
+
+        for step in self.steps:
             for dep in step.dependencies:
                 if dep not in step_names:
                     raise ValueError(
                         f"Step '{step.name}' depends on unknown step '{dep}'"
                     )
-        
-        return values
+
+        return self
 
 
 class LoggingConfig(BaseModel):
     """Logging configuration."""
     level: LogLevel = Field(default=LogLevel.INFO)
-    format: str = Field(default="json", regex="^(json|text)$")
+    format: str = Field(default="json", pattern="^(json|text)$")
     file: Optional[str] = None
     max_size_mb: int = Field(default=10, ge=1)
     backup_count: int = Field(default=5, ge=0)
@@ -198,7 +198,7 @@ class LoggingConfig(BaseModel):
 class TelemetryConfig(BaseModel):
     """Telemetry configuration."""
     enabled: bool = True
-    export_format: str = Field(default="json", regex="^(json|prometheus)$")
+    export_format: str = Field(default="json", pattern="^(json|prometheus)$")
     export_path: Optional[str] = None
     max_events: int = Field(default=10000, ge=100)
     metrics_interval: float = Field(default=60.0, ge=1)
@@ -215,6 +215,8 @@ class DashboardConfig(BaseModel):
 
 class SwarmConfig(BaseModel):
     """Swarm configuration."""
+    model_config = {"extra": "allow"}
+
     name: str = "Claude Agent Swarm"
     description: str = ""
     max_agents: int = Field(default=10, ge=1)
@@ -227,10 +229,6 @@ class SwarmConfig(BaseModel):
     dashboard: DashboardConfig = Field(default_factory=DashboardConfig)
     global_rate_limits: RateLimitConfig = Field(default_factory=RateLimitConfig)
     environment: Dict[str, str] = Field(default_factory=dict)
-    
-    class Config:
-        """Pydantic config."""
-        extra = "allow"
 
 
 class ConfigLoader:

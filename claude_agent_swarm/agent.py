@@ -109,6 +109,8 @@ class ClaudeAgent:
         max_tokens: int = 4096,
         temperature: float = 0.7,
         api_key: Optional[str] = None,
+        name: Optional[str] = None,
+        role: Optional[str] = None,
     ) -> None:
         """Initialize the agent. Use `create()` for async initialization.
 
@@ -119,6 +121,8 @@ class ClaudeAgent:
             max_tokens: Maximum tokens for responses
             temperature: Sampling temperature
             api_key: Optional Anthropic API key
+            name: Optional human-readable name for the agent
+            role: Optional role/specialization for the agent
         """
         self._agent_id = agent_id
         self._model = model
@@ -126,6 +130,8 @@ class ClaudeAgent:
         self._max_tokens = max_tokens
         self._temperature = temperature
         self._api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        self._name = name or f"agent_{agent_id[:8]}"
+        self._role = role or "general"
 
         self._client: Optional[AsyncAnthropic] = None
         self._status = AgentStatus.IDLE
@@ -143,6 +149,8 @@ class ClaudeAgent:
         max_tokens: int = 4096,
         temperature: float = 0.7,
         api_key: Optional[str] = None,
+        name: Optional[str] = None,
+        role: Optional[str] = None,
     ) -> "ClaudeAgent":
         """Async factory method to create and initialize a ClaudeAgent.
 
@@ -152,6 +160,8 @@ class ClaudeAgent:
             max_tokens: Maximum tokens for responses
             temperature: Sampling temperature
             api_key: Optional Anthropic API key
+            name: Optional human-readable name for the agent
+            role: Optional role/specialization for the agent
 
         Returns:
             An initialized ClaudeAgent instance
@@ -164,6 +174,8 @@ class ClaudeAgent:
             max_tokens=max_tokens,
             temperature=temperature,
             api_key=api_key,
+            name=name,
+            role=role,
         )
 
         instance._client = AsyncAnthropic(api_key=instance._api_key)
@@ -194,6 +206,16 @@ Be collaborative, share relevant information, and follow the swarm's coordinatio
     def agent_id(self) -> str:
         """Get the agent's unique identifier."""
         return self._agent_id
+
+    @property
+    def name(self) -> str:
+        """Get the agent's human-readable name."""
+        return self._name
+
+    @property
+    def role(self) -> str:
+        """Get the agent's role/specialization."""
+        return self._role
 
     @property
     def status(self) -> AgentStatus:
@@ -452,6 +474,10 @@ Be collaborative, share relevant information, and follow the swarm's coordinatio
                 self._client = None
             self._initialized = False
             logger.info("agent_closed", agent_id=self._agent_id)
+
+    async def terminate(self) -> None:
+        """Terminate the agent. Alias for close() for backwards compatibility."""
+        await self.close()
 
     async def __aenter__(self) -> "ClaudeAgent":
         """Async context manager entry."""

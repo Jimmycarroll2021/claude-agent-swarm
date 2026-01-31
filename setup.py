@@ -13,8 +13,7 @@ setup(
     description="A production-ready agent swarm framework for Claude Code",
     author="Claude Agent Swarm Team",
     python_requires=">=3.10",
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
+    packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
         "anthropic>=0.42.0",
         "mcp>=1.0.0",

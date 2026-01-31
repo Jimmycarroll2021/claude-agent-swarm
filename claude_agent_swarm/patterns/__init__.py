@@ -391,11 +391,30 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
         await self.cleanup()
 
 
+# Import concrete pattern implementations
+from .base import Pattern, PatternConfig
+from .leader import LeaderPattern, LeaderConfig
+from .pipeline import PipelinePattern, PipelineConfig
+from .swarm import SwarmPattern, SwarmPatternConfig
+from .council import CouncilPattern, CouncilConfig
+
 # Export all public classes
 __all__ = [
+    # Base classes
     "OrchestrationPattern",
+    "Pattern",
+    "PatternConfig",
     "PatternStatus",
     "AgentCapability",
     "TaskResult",
     "PatternMetrics",
+    # Concrete patterns
+    "LeaderPattern",
+    "LeaderConfig",
+    "PipelinePattern",
+    "PipelineConfig",
+    "SwarmPattern",
+    "SwarmPatternConfig",
+    "CouncilPattern",
+    "CouncilConfig",
 ]

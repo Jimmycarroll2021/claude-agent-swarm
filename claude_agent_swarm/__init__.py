@@ -17,6 +17,7 @@ from .models import (
     ComplexityScore,
     Subtask,
     LoadBalancePlan,
+    Task,
 )
 
 from .agent import (
@@ -90,6 +91,7 @@ __all__ = [
     "ComplexityScore",
     "Subtask",
     "LoadBalancePlan",
+    "Task",
 
     # Agent
     "ClaudeAgent",
