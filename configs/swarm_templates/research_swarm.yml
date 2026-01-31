@@ -1,0 +1,77 @@
+version: 1
+swarm:
+  name: "Research Swarm"
+  description: "Multi-source research with parallel agents and synthesis"
+  orchestration_mode: "hybrid"
+  max_agents: 20
+  parallel_limit: 10
+
+  orchestrator:
+    model: "claude-3-7-sonnet-20250219"
+    description: "Research swarm coordinator"
+    context_strategy: "summarize"
+
+  agent_templates:
+    researcher:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a research specialist. Your task is to:
+        1. Search for and gather information on the given topic
+        2. Provide factual, well-sourced information
+        3. Structure your findings clearly
+        4. Include specific data points and statistics
+      tools:
+        - web_search
+        - read_file
+      output_format: "structured_json"
+      timeout: 120
+
+    synthesizer:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a synthesis specialist. Your task is to:
+        1. Combine findings from multiple research sources
+        2. Identify patterns and connections
+        3. Create a coherent, comprehensive summary
+        4. Highlight key insights and conclusions
+      tools:
+        - read_file
+        - write_file
+      output_format: "structured_json"
+      timeout: 180
+
+  workflows:
+    multi_source_research:
+      description: "Research a topic from multiple angles"
+      pattern: "swarm"
+      steps:
+        - name: "spawn_researchers"
+          action: "spawn_agents"
+          config:
+            template: "researcher"
+            count: "dynamic"
+            count_formula: "min(max(3, complexity_score / 10), 10)"
+          
+        - name: "execute_research"
+          action: "execute_parallel"
+          config:
+            timeout: 120
+            retry_failed: true
+            
+        - name: "collect_results"
+          action: "collect_results"
+          config:
+            timeout: 300
+            require_all: false
+            
+        - name: "synthesize"
+          action: "execute_agent"
+          config:
+            template: "synthesizer"
+            timeout: 180
+
+  settings:
+    enable_telemetry: true
+    enable_dashboard: true
+    checkpoint_interval: 60
+    fail_fast: false

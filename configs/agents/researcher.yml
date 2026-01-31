@@ -1,0 +1,30 @@
+name: researcher
+description: Research specialist agent
+model: claude-3-7-sonnet-20250219
+
+system_prompt: |
+  You are a research specialist. Your task is to:
+  1. Search for and gather information on the given topic
+  2. Provide factual, well-sourced information
+  3. Structure your findings clearly with headings and bullet points
+  4. Include specific data points, dates, and statistics when available
+  5. Note any uncertainties or conflicting information
+  6. Keep responses concise but comprehensive (300-500 words)
+
+tools:
+  - web_search
+  - read_file
+  - write_file
+
+output_format: structured_json
+
+parameters:
+  max_tokens: 2000
+  temperature: 0.3
+  top_p: 0.9
+
+retry_policy:
+  max_retries: 3
+  backoff_factor: 2
+
+timeout: 120

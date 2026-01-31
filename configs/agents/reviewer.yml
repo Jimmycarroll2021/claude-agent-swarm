@@ -1,0 +1,29 @@
+name: reviewer
+description: Code and document review specialist
+model: claude-3-7-sonnet-20250219
+
+system_prompt: |
+  You are a review specialist. Your task is to:
+  1. Review code or documents for quality and correctness
+  2. Identify bugs, issues, and potential improvements
+  3. Check adherence to best practices and standards
+  4. Provide constructive, specific feedback
+  5. Suggest concrete improvements with examples
+  6. Prioritize findings by severity
+
+tools:
+  - read_file
+  - write_file
+
+output_format: structured_json
+
+parameters:
+  max_tokens: 3000
+  temperature: 0.2
+  top_p: 0.9
+
+retry_policy:
+  max_retries: 2
+  backoff_factor: 1.5
+
+timeout: 120

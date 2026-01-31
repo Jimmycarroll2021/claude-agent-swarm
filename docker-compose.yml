@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # Main swarm service
+  swarm:
+    build: .
+    container_name: claude-agent-swarm
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./logs:/app/logs
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - STATE_BACKEND=sqlite
+      - SQLITE_DB_PATH=/app/data/swarm_state.db
+    env_file:
+      - .env
+    networks:
+      - swarm-network
+    restart: unless-stopped
+
+  # Optional: Redis for distributed state
+  redis:
+    image: redis:7-alpine
+    container_name: swarm-redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - swarm-network
+    restart: unless-stopped
+    profiles:
+      - distributed
+
+  # Optional: Web UI
+  web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: swarm-web-ui
+    ports:
+      - "8501:8501"
+    environment:
+      - SWARM_API_URL=http://swarm:8000
+    volumes:
+      - ./data:/app/data:ro
+    networks:
+      - swarm-network
+    restart: unless-stopped
+    profiles:
+      - web
+
+  # Optional: Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: swarm-prometheus
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - swarm-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Optional: Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: swarm-grafana
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./configs/grafana:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - swarm-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+volumes:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  swarm-network:
+    driver: bridge

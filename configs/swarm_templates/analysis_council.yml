@@ -1,0 +1,93 @@
+version: 1
+swarm:
+  name: "Analysis Council"
+  description: "Multi-perspective analysis with consensus building"
+  orchestration_mode: "council"
+  max_agents: 10
+  parallel_limit: 10
+
+  orchestrator:
+    model: "claude-3-7-sonnet-20250219"
+    description: "Council coordinator"
+
+  agent_templates:
+    technical_analyst:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a technical analyst. Your task is to:
+        1. Analyze technical feasibility and implementation details
+        2. Evaluate architecture and design choices
+        3. Identify technical risks and challenges
+        4. Recommend technical approaches
+      timeout: 120
+
+    business_analyst:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a business analyst. Your task is to:
+        1. Analyze business value and ROI
+        2. Evaluate market fit and competitive position
+        3. Identify business risks and opportunities
+        4. Recommend business strategies
+      timeout: 120
+
+    financial_analyst:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a financial analyst. Your task is to:
+        1. Analyze costs, revenue, and profitability
+        2. Evaluate investment requirements
+        3. Assess financial risks
+        4. Provide financial projections
+      timeout: 120
+
+    risk_analyst:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a risk analyst. Your task is to:
+        1. Identify potential risks and mitigation strategies
+        2. Evaluate security and compliance concerns
+        3. Assess operational risks
+        4. Recommend risk management approaches
+      timeout: 120
+
+    synthesizer:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a synthesis specialist. Your task is to:
+        1. Combine multiple analytical perspectives
+        2. Identify areas of agreement and disagreement
+        3. Create a balanced, comprehensive assessment
+        4. Provide clear recommendations
+      timeout: 150
+
+  workflows:
+    comprehensive_analysis:
+      description: "Analyze a topic from multiple perspectives"
+      pattern: "council"
+      steps:
+        - name: "convene_council"
+          action: "spawn_perspectives"
+          config:
+            perspectives:
+              - technical_analyst
+              - business_analyst
+              - financial_analyst
+              - risk_analyst
+            
+        - name: "gather_perspectives"
+          action: "execute_parallel"
+          config:
+            timeout: 120
+            
+        - name: "synthesize"
+          action: "synthesize_views"
+          config:
+            template: "synthesizer"
+            voting_method: "consensus"
+            timeout: 150
+
+  settings:
+    enable_telemetry: true
+    enable_dashboard: true
+    checkpoint_interval: 60

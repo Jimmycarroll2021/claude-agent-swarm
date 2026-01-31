@@ -1,0 +1,239 @@
+# Example Configuration for Claude Agent Swarm
+
+name: "My Agent Swarm"
+description: "Example swarm configuration"
+
+# Default LLM settings for all agents
+default_llm:
+  model: "claude-3-sonnet-20240229"
+  provider: "anthropic"
+  temperature: 0.7
+  max_tokens: 4096
+  timeout: 60
+  retry:
+    max_retries: 3
+    base_delay: 1.0
+    max_delay: 60.0
+    exponential_base: 2.0
+
+# Agent Templates
+agent_templates:
+  # Base template with common settings
+  base:
+    description: "Base agent template"
+    system_prompt: "You are a helpful AI assistant."
+    capabilities:
+      - communication
+    max_iterations: 10
+    token_budget:
+      max_input_tokens: 100000
+      max_output_tokens: 4096
+      warning_threshold: 0.8
+    rate_limits:
+      requests_per_minute: 60
+      tokens_per_minute: 100000
+      concurrent_requests: 5
+
+  # Code reviewer agent
+  code_reviewer:
+    parent_template: base
+    description: "Code review specialist"
+    system_prompt: |
+      You are an expert code reviewer. Your task is to:
+      1. Review code for bugs, security issues, and best practices
+      2. Provide constructive feedback
+      3. Suggest improvements
+      4. Check for code style compliance
+    capabilities:
+      - code
+      - review
+    tools:
+      - file_reader
+      - code_analyzer
+    llm:
+      temperature: 0.3
+      max_tokens: 2048
+
+  # Documentation writer agent
+  doc_writer:
+    parent_template: base
+    description: "Documentation specialist"
+    system_prompt: |
+      You are a technical documentation writer. Your task is to:
+      1. Write clear and concise documentation
+      2. Create API documentation
+      3. Write user guides and tutorials
+      4. Ensure documentation is up to date
+    capabilities:
+      - writing
+      - analysis
+    tools:
+      - file_reader
+      - file_writer
+    llm:
+      temperature: 0.5
+      max_tokens: 4096
+
+  # Research agent
+  researcher:
+    parent_template: base
+    description: "Research specialist"
+    system_prompt: |
+      You are a research specialist. Your task is to:
+      1. Gather information on topics
+      2. Analyze data and findings
+      3. Summarize research results
+      4. Identify key insights
+    capabilities:
+      - research
+      - analysis
+    tools:
+      - web_search
+      - document_analyzer
+    llm:
+      temperature: 0.7
+      max_tokens: 4096
+
+  # Testing agent
+  tester:
+    parent_template: base
+    description: "Testing specialist"
+    system_prompt: |
+      You are a software testing specialist. Your task is to:
+      1. Write comprehensive test cases
+      2. Identify edge cases and boundary conditions
+      3. Suggest test coverage improvements
+      4. Analyze test results
+    capabilities:
+      - testing
+      - analysis
+    tools:
+      - test_runner
+      - coverage_analyzer
+    llm:
+      temperature: 0.3
+      max_tokens: 2048
+
+# Workflows
+workflows:
+  code_review_pipeline:
+    name: "Code Review Pipeline"
+    description: "Complete code review workflow"
+    max_parallel: 3
+    timeout: 1800
+    on_failure: "stop"
+    steps:
+      - name: "analyze_code"
+        agent_template: "code_reviewer"
+        description: "Analyze the code for issues"
+        parameters:
+          focus_areas: ["security", "performance", "maintainability"]
+        output_key: "analysis_result"
+      
+      - name: "write_review_comments"
+        agent_template: "code_reviewer"
+        description: "Write detailed review comments"
+        dependencies: ["analyze_code"]
+        parameters:
+          format: "structured"
+        output_key: "review_comments"
+      
+      - name: "update_documentation"
+        agent_template: "doc_writer"
+        description: "Update documentation based on changes"
+        dependencies: ["write_review_comments"]
+        parameters:
+          update_api_docs: true
+        output_key: "doc_updates"
+
+  research_and_document:
+    name: "Research and Document"
+    description: "Research topic and create documentation"
+    max_parallel: 2
+    steps:
+      - name: "research_topic"
+        agent_template: "researcher"
+        description: "Research the given topic"
+        parameters:
+          depth: "comprehensive"
+        output_key: "research_findings"
+      
+      - name: "create_documentation"
+        agent_template: "doc_writer"
+        description: "Create documentation from research"
+        dependencies: ["research_topic"]
+        parameters:
+          format: "markdown"
+        output_key: "documentation"
+
+# Tool Registry
+tools:
+  auto_discover: true
+  tool_timeout: 30
+  tools:
+    - name: file_reader
+      enabled: true
+      timeout: 10
+      parameters:
+        max_file_size: 1048576
+    
+    - name: file_writer
+      enabled: true
+      timeout: 10
+      parameters:
+        create_dirs: true
+    
+    - name: code_analyzer
+      enabled: true
+      timeout: 60
+      parameters:
+        languages: ["python", "javascript", "typescript"]
+    
+    - name: web_search
+      enabled: true
+      timeout: 30
+      parameters:
+        max_results: 10
+    
+    - name: test_runner
+      enabled: true
+      timeout: 120
+      parameters:
+        coverage_threshold: 80
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  file: "logs/swarm.log"
+  max_size_mb: 10
+  backup_count: 5
+  console: true
+
+# Telemetry Configuration
+telemetry:
+  enabled: true
+  export_format: "json"
+  export_path: "metrics/"
+  max_events: 10000
+  metrics_interval: 60
+
+# Dashboard Configuration
+dashboard:
+  enabled: true
+  refresh_rate: 0.5
+  show_token_usage: true
+  show_tool_calls: true
+  show_timestamps: true
+
+# Global Rate Limits
+global_rate_limits:
+  requests_per_minute: 100
+  tokens_per_minute: 150000
+  concurrent_requests: 10
+
+# Environment Variables
+environment:
+  LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+  ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+  OPENAI_API_KEY: "${OPENAI_API_KEY:-}"

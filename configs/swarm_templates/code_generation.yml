@@ -1,0 +1,105 @@
+version: 1
+swarm:
+  name: "Code Generation Pipeline"
+  description: "Multi-stage code generation with review and testing"
+  orchestration_mode: "pipeline"
+  max_agents: 15
+  parallel_limit: 5
+
+  orchestrator:
+    model: "claude-3-7-sonnet-20250219"
+    description: "Code generation coordinator"
+
+  agent_templates:
+    architect:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a software architect. Your task is to:
+        1. Design clean, scalable software architecture
+        2. Define clear interfaces and component relationships
+        3. Choose appropriate design patterns
+        4. Document design decisions and trade-offs
+      tools:
+        - read_file
+        - write_file
+      timeout: 120
+
+    coder:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are an expert developer. Your task is to:
+        1. Write clean, efficient, well-documented code
+        2. Follow best practices and conventions
+        3. Include proper error handling
+        4. Add comprehensive comments
+      tools:
+        - read_file
+        - write_file
+        - edit_file
+        - code_execution
+      timeout: 180
+
+    reviewer:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a code reviewer. Your task is to:
+        1. Review code for correctness and quality
+        2. Identify bugs and potential issues
+        3. Check adherence to best practices
+        4. Provide constructive feedback
+      tools:
+        - read_file
+        - write_file
+      timeout: 120
+
+    tester:
+      model: "claude-3-7-sonnet-20250219"
+      system_prompt: |
+        You are a QA engineer. Your task is to:
+        1. Write comprehensive unit tests
+        2. Cover edge cases and error conditions
+        3. Ensure good test coverage
+        4. Write clear test descriptions
+      tools:
+        - read_file
+        - write_file
+        - code_execution
+      timeout: 150
+
+  workflows:
+    code_generation:
+      description: "Generate code through design, implementation, review, and testing"
+      pattern: "pipeline"
+      steps:
+        - name: "design"
+          stage: "architecture"
+          template: "architect"
+          config:
+            timeout: 120
+            
+        - name: "implement"
+          stage: "implementation"
+          template: "coder"
+          config:
+            parallel: 3
+            timeout: 180
+            
+        - name: "review"
+          stage: "review"
+          template: "reviewer"
+          config:
+            timeout: 120
+            condition: "implementation.complete"
+            
+        - name: "test"
+          stage: "testing"
+          template: "tester"
+          config:
+            timeout: 150
+            condition: "review.passed"
+
+  settings:
+    enable_telemetry: true
+    enable_dashboard: true
+    checkpoint_interval: 60
+    fail_fast: true
