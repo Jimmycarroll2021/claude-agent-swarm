@@ -24,7 +24,7 @@ A production-ready agent swarm framework for Claude Code, inspired by Kimi K2.5'
 
 ```bash
 # Clone the repository
-git clone https://github.com/claude-agent-swarm/claude-agent-swarm.git
+git clone https://github.com/Jimmycarroll2021/claude-agent-swarm.git
 cd claude-agent-swarm
 
 # Install with pip
@@ -299,9 +299,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 📖 [Documentation](https://claude-agent-swarm.readthedocs.io)
-- 🐛 [Issue Tracker](https://github.com/claude-agent-swarm/claude-agent-swarm/issues)
-- 💬 [Discussions](https://github.com/claude-agent-swarm/claude-agent-swarm/discussions)
+- 📖 [Documentation](https://github.com/Jimmycarroll2021/claude-agent-swarm#readme)
+- 🐛 [Issue Tracker](https://github.com/Jimmycarroll2021/claude-agent-swarm/issues)
+- 💬 [Discussions](https://github.com/Jimmycarroll2021/claude-agent-swarm/discussions)
 
 ---
 

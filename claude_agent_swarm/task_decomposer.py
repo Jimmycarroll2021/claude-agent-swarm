@@ -12,8 +12,9 @@ from collections.abc import Sequence
 from datetime import datetime
 from uuid import uuid4
 
-from agent import ClaudeAgent, ClaudeModel, TokenUsage
-from exceptions import (
+from .agent import ClaudeAgent
+from .models import ClaudeModel, TokenUsage, ComplexityScore, Subtask, LoadBalancePlan
+from .exceptions import (
     ComplexityAnalysisError,
     DependencyError,
     TaskDecomposerError,

@@ -14,103 +14,30 @@ from uuid import uuid4
 
 import yaml
 
-from agent import ClaudeAgent, ClaudeModel, TokenUsage
-from exceptions import (
+from .agent import ClaudeAgent
+from .models import (
+    ClaudeModel,
+    TokenUsage,
+    SwarmPattern,
+    AgentConfig,
+    SwarmConfig,
+    TaskResult,
+    SwarmStatus,
+    ExecutionPlan,
+)
+from .exceptions import (
     ConfigurationError,
     OrchestratorError,
     SwarmCreationError,
     TaskDistributionError,
 )
-from swarm_manager import SwarmManager
-from task_decomposer import TaskDecomposer
+from .swarm_manager import SwarmManager
+from .task_decomposer import TaskDecomposer
 
 # Type variables
 T = TypeVar("T")
 
 logger = logging.getLogger(__name__)
-
-
-class SwarmPattern(Enum):
-    """Enumeration of swarm execution patterns."""
-    
-    AUTO = auto()       # Automatically select best pattern
-    LEADER = auto()     # Leader-follower pattern
-    SWARM = auto()      # Decentralized swarm
-    PIPELINE = auto()   # Sequential pipeline
-    COUNCIL = auto()    # Consensus-based council
-
-
-@dataclass
-class AgentConfig:
-    """Configuration for an agent in the swarm."""
-    
-    name: str
-    model: ClaudeModel = "claude-3-7-sonnet-20250219"
-    system_prompt: str = "You are a helpful AI assistant."
-    max_tokens: int = 4096
-    temperature: float = 0.7
-    tools: list[str] = field(default_factory=list)
-    specialization: str | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class SwarmConfig:
-    """Configuration for a swarm."""
-    
-    name: str
-    pattern: SwarmPattern = SwarmPattern.AUTO
-    max_agents: int = 10
-    agent_configs: list[AgentConfig] = field(default_factory=list)
-    shared_system_prompt: str | None = None
-    enable_mcp: bool = False
-    mcp_servers: list[dict[str, Any]] = field(default_factory=list)
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class TaskResult:
-    """Result of a task execution."""
-    
-    task_id: str
-    agent_id: str | None
-    status: Literal["success", "failure", "timeout", "cancelled"]
-    result: Any = None
-    error: str | None = None
-    token_usage: TokenUsage = field(default_factory=TokenUsage)
-    execution_time: float = 0.0
-    timestamp: datetime = field(default_factory=datetime.now)
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class SwarmStatus:
-    """Status information for a swarm."""
-    
-    swarm_id: str
-    config: SwarmConfig
-    active_agents: int = 0
-    total_tasks: int = 0
-    completed_tasks: int = 0
-    failed_tasks: int = 0
-    total_token_usage: TokenUsage = field(default_factory=TokenUsage)
-    is_running: bool = False
-    start_time: datetime | None = None
-    end_time: datetime | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class ExecutionPlan:
-    """Execution plan for a task."""
-    
-    plan_id: str
-    pattern: SwarmPattern
-    subtasks: list[dict[str, Any]] = field(default_factory=list)
-    dependencies: dict[str, list[str]] = field(default_factory=dict)
-    estimated_tokens: int = 0
-    estimated_time: float = 0.0
-    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class SwarmOrchestrator:

@@ -11,14 +11,14 @@ from collections.abc import Sequence
 from datetime import datetime
 from uuid import uuid4
 
-from agent import ClaudeAgent, ClaudeModel, TokenUsage
-from exceptions import (
+from .agent import ClaudeAgent
+from .models import ClaudeModel, TokenUsage, AgentConfig, SwarmConfig
+from .exceptions import (
     AgentError,
     ResourceExhaustedError,
     ScalingError,
     SwarmManagerError,
 )
-from orchestrator import AgentConfig, SwarmConfig
 
 # Type variables
 T = TypeVar("T")

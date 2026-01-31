@@ -65,13 +65,13 @@ all = [
 claude-swarm = "claude_agent_swarm.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/claude-agent-swarm/claude-agent-swarm"
-Documentation = "https://claude-agent-swarm.readthedocs.io"
-Repository = "https://github.com/claude-agent-swarm/claude-agent-swarm"
-Issues = "https://github.com/claude-agent-swarm/claude-agent-swarm/issues"
+Homepage = "https://github.com/Jimmycarroll2021/claude-agent-swarm"
+Documentation = "https://github.com/Jimmycarroll2021/claude-agent-swarm#readme"
+Repository = "https://github.com/Jimmycarroll2021/claude-agent-swarm"
+Issues = "https://github.com/Jimmycarroll2021/claude-agent-swarm/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/claude_agent_swarm"]
+packages = ["claude_agent_swarm"]
 
 [tool.black]
 line-length = 100
@@ -128,7 +128,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src"]
+source = ["claude_agent_swarm"]
 branch = true
 omit = [
     "*/tests/*",
