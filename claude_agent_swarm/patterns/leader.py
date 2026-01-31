@@ -321,5 +321,15 @@ Subtask Results:
             aggregation_prompt,
             context=aggregation_context,
         )
-        
+
         return aggregation_result
+
+    async def terminate(self) -> None:
+        """Terminate the pattern and cleanup resources including task decomposer."""
+        # Cleanup task decomposer if initialized
+        if self._task_decomposer is not None:
+            await self._task_decomposer.close()
+            self._task_decomposer = None
+
+        # Call parent terminate to handle agent cleanup
+        await super().terminate()

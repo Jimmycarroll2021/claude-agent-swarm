@@ -55,12 +55,14 @@ class TokenUsage:
 class AgentConfig:
     """Configuration for an agent in the swarm."""
 
-    name: str
+    name: str = "agent"
     model: ClaudeModel = "claude-3-7-sonnet-20250219"
-    system_prompt: str = "You are a helpful AI assistant."
+    system_prompt: str | None = None
     max_tokens: int = 4096
     temperature: float = 0.7
     tools: list[str] = field(default_factory=list)
+    timeout: float = 300.0
+    max_retries: int = 3
     specialization: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 

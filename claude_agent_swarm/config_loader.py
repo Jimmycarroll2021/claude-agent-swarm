@@ -128,8 +128,8 @@ class AgentTemplate(BaseModel):
     
     def merge_with_parent(self, parent: AgentTemplate) -> AgentTemplate:
         """Merge this template with a parent template."""
-        merged_data = parent.dict()
-        child_data = self.dict(exclude_unset=True)
+        merged_data = parent.model_dump()
+        child_data = self.model_dump(exclude_unset=True)
         
         # Deep merge for certain fields
         merged_data["capabilities"] = list(set(
@@ -609,7 +609,7 @@ class ConfigLoader:
             raise ValueError(f"Agent template '{template_name}' not found")
         
         if overrides:
-            template_data = template.dict()
+            template_data = template.model_dump()
             merged = self._deep_merge(template_data, overrides)
             return AgentTemplate(**merged)
         
@@ -639,7 +639,7 @@ class ConfigLoader:
         filepath.parent.mkdir(parents=True, exist_ok=True)
         
         # Convert to dict and remove None values
-        data = self._remove_none_values(config.dict())
+        data = self._remove_none_values(config.model_dump())
         
         with open(filepath, 'w', encoding='utf-8') as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)

@@ -130,18 +130,22 @@ class Pattern(ABC):
     async def terminate(self) -> None:
         """Terminate the pattern and cleanup resources."""
         self._status = PatternStatus.TERMINATING
-        
+
         # Terminate all agents
         for agent in self.agents:
             await agent.terminate()
-        
+
         self._status = PatternStatus.TERMINATED
-        
+
         logger.info(
             "pattern_terminated",
             pattern_name=self.name,
             execution_count=self._execution_count,
         )
+
+    async def close(self) -> None:
+        """Close the pattern (alias for terminate for consistency with agents)."""
+        await self.terminate()
     
     async def get_status(self) -> Dict[str, Any]:
         """Get pattern status information.

@@ -247,7 +247,7 @@ class CodeExecutionTool(BaseTool):
             # Cleanup
             try:
                 os.unlink(temp_file)
-            except:
+            except OSError:
                 pass
     
     async def execute_bash(self, code: str, timeout: int) -> ExecutionResult:

@@ -73,9 +73,13 @@ class AgentCapability(Protocol):
 
 
 @dataclass
-class TaskResult(Generic[T]):
-    """Container for task execution results with metadata."""
-    
+class PatternTaskResult(Generic[T]):
+    """Container for pattern task execution results with metadata.
+
+    Note: This is distinct from models.TaskResult which is used for external API results.
+    This class is used internally by orchestration patterns for detailed execution tracking.
+    """
+
     task_id: str
     status: PatternStatus
     result: Optional[T] = None
@@ -84,12 +88,12 @@ class TaskResult(Generic[T]):
     execution_time: float = 0.0
     timestamp: float = field(default_factory=time.time)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     @property
     def is_success(self) -> bool:
         """Check if task completed successfully."""
         return self.status == PatternStatus.COMPLETED and self.error is None
-    
+
     @property
     def is_failure(self) -> bool:
         """Check if task failed."""
@@ -223,7 +227,7 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
         coro: Coroutine[Any, Any, T],
         timeout: Optional[float] = None,
         task_id: Optional[str] = None,
-    ) -> TaskResult[T]:
+    ) -> PatternTaskResult[T]:
         """
         Execute a coroutine with timeout handling.
         
@@ -233,7 +237,7 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
             task_id: Optional task identifier for result tracking
         
         Returns:
-            TaskResult containing execution result or error
+            PatternTaskResult containing execution result or error
         """
         task_id = task_id or f"task_{id(coro)}"
         timeout = timeout or self.default_timeout
@@ -246,7 +250,7 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
             if self._metrics:
                 self._metrics.record_completion(execution_time)
             
-            return TaskResult(
+            return PatternTaskResult(
                 task_id=task_id,
                 status=PatternStatus.COMPLETED,
                 result=result,
@@ -259,7 +263,7 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
             if self._metrics:
                 self._metrics.record_timeout()
             
-            return TaskResult(
+            return PatternTaskResult(
                 task_id=task_id,
                 status=PatternStatus.TIMEOUT,
                 error=e,
@@ -272,7 +276,7 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
             if self._metrics:
                 self._metrics.record_failure()
             
-            return TaskResult(
+            return PatternTaskResult(
                 task_id=task_id,
                 status=PatternStatus.FAILED,
                 error=e,
@@ -284,7 +288,7 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
         tasks: List[Coroutine[Any, Any, T]],
         timeout: Optional[float] = None,
         return_exceptions: bool = True,
-    ) -> List[TaskResult[T]]:
+    ) -> List[PatternTaskResult[T]]:
         """
         Execute multiple coroutines in parallel with concurrency control.
         
@@ -294,14 +298,14 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
             return_exceptions: Whether to return exceptions in results
         
         Returns:
-            List of TaskResult objects in original order
+            List of PatternTaskResult objects in original order
         """
         timeout = timeout or self.default_timeout
         
         async def bounded_execute(
             coro: Coroutine[Any, Any, T],
             idx: int,
-        ) -> TaskResult[T]:
+        ) -> PatternTaskResult[T]:
             async with self._acquire_slot():
                 return await self._execute_with_timeout(
                     coro,
@@ -319,10 +323,10 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
         results = await asyncio.gather(*bounded_tasks, return_exceptions=True)
         
         # Handle any exceptions from gather itself
-        processed_results: List[TaskResult[T]] = []
+        processed_results: List[PatternTaskResult[T]] = []
         for idx, result in enumerate(results):
             if isinstance(result, Exception):
-                processed_results.append(TaskResult(
+                processed_results.append(PatternTaskResult(
                     task_id=f"parallel_task_{idx}",
                     status=PatternStatus.FAILED,
                     error=result,
@@ -334,13 +338,13 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
     
     def _filter_successful_results(
         self,
-        results: List[TaskResult[T]],
+        results: List[PatternTaskResult[T]],
     ) -> List[T]:
         """
         Extract successful results, filtering out failures.
         
         Args:
-            results: List of TaskResult objects
+            results: List of PatternTaskResult objects
         
         Returns:
             List of successful result values
@@ -351,7 +355,7 @@ class OrchestrationPattern(ABC, Generic[AgentType]):
                 successful.append(r.result)
         return successful
     
-    def _has_partial_failures(self, results: List[TaskResult[T]]) -> bool:
+    def _has_partial_failures(self, results: List[PatternTaskResult[T]]) -> bool:
         """Check if any results indicate partial failure."""
         return any(r.is_failure for r in results)
     
@@ -406,7 +410,7 @@ __all__ = [
     "PatternConfig",
     "PatternStatus",
     "AgentCapability",
-    "TaskResult",
+    "PatternTaskResult",
     "PatternMetrics",
     # Concrete patterns
     "LeaderPattern",

@@ -16,17 +16,10 @@ from uuid import uuid4
 from anthropic import AsyncAnthropic
 import structlog
 
+from .models import ClaudeModel, TokenUsage, AgentConfig
 from .tools import BaseTool, ToolResult
 
 logger = structlog.get_logger()
-
-# Type alias for Claude models
-ClaudeModel = Literal[
-    "claude-3-5-sonnet-20241022",
-    "claude-3-7-sonnet-20250219",
-    "claude-opus-4-20250514",
-    "claude-sonnet-4-20250514",
-]
 
 
 class AgentStatus(Enum):
@@ -35,47 +28,6 @@ class AgentStatus(Enum):
     BUSY = "busy"
     ERROR = "error"
     TERMINATED = "terminated"
-
-
-@dataclass
-class TokenUsage:
-    """Token usage tracking."""
-    input_tokens: int = 0
-    output_tokens: int = 0
-
-    @property
-    def total_tokens(self) -> int:
-        """Get total token count."""
-        return self.input_tokens + self.output_tokens
-
-    def add(self, other: "TokenUsage") -> None:
-        """Add another TokenUsage to this one."""
-        self.input_tokens += other.input_tokens
-        self.output_tokens += other.output_tokens
-
-    def to_dict(self) -> Dict[str, int]:
-        """Convert to dictionary."""
-        return {
-            "input_tokens": self.input_tokens,
-            "output_tokens": self.output_tokens,
-            "total_tokens": self.total_tokens,
-        }
-
-
-@dataclass
-class AgentConfig:
-    """Configuration for an Agent."""
-
-    name: str = "agent"
-    model: ClaudeModel = "claude-3-7-sonnet-20250219"
-    max_tokens: int = 4096
-    temperature: float = 0.7
-    system_prompt: Optional[str] = None
-    tools: List[str] = field(default_factory=list)
-    timeout: float = 300.0
-    max_retries: int = 3
-    specialization: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
