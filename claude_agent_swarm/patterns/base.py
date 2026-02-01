@@ -190,3 +190,12 @@ class Pattern(ABC):
         # Return a no-op context manager if no telemetry
         from contextlib import nullcontext
         return nullcontext()
+
+    async def __aenter__(self) -> "Pattern":
+        """Async context manager entry."""
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Async context manager exit with cleanup."""
+        await self.terminate()

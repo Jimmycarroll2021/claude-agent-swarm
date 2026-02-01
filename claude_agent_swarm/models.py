@@ -130,17 +130,27 @@ class ExecutionPlan:
 class ComplexityScore:
     """Complexity score for a task."""
 
-    overall: float  # 0.0 to 1.0
-    cognitive: float  # Cognitive complexity
-    domain: float  # Domain knowledge required
-    steps: float  # Number of steps required
-    dependencies: float  # Dependency complexity
-    data_volume: float  # Amount of data to process
+    overall: float = 0.5  # 0.0 to 1.0
+    cognitive: float = 0.5  # Cognitive complexity
+    domain: float = 0.5  # Domain knowledge required
+    steps: float = 0.5  # Number of steps required
+    dependencies: float = 0.5  # Dependency complexity
+    data_volume: float = 0.5  # Amount of data to process
 
     @property
     def is_complex(self) -> bool:
         """Determine if task is complex enough to benefit from swarm."""
         return self.overall > 0.6
+
+    @property
+    def complexity_level(self) -> str:
+        """Get human-readable complexity level."""
+        if self.overall < 0.3:
+            return "low"
+        elif self.overall < 0.7:
+            return "moderate"
+        else:
+            return "high"
 
     @property
     def recommended_agents(self) -> int:
